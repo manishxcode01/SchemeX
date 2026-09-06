@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,300;1,9..144,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme inline {
+  --color-bg: #FAF7F0;
+  --color-primary: #1E3A5F;
+  --color-accent: #E8A33D;
+  --color-text: #2D2A26;
+  --color-nearmiss: #C7511F;
+  --color-muted: #7A8B99;
+  --color-eligible: #1E6B3C;
+  --color-card: #FFFFFF;
+  --color-border: #E5E0D8;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+button,
+a,
+article,
+input,
+textarea,
+select {
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+button:not(:disabled),
+a {
+  cursor: pointer;
+}
+
+button:not(:disabled):hover,
+a:hover {
+  filter: brightness(0.97);
+}
+
+article:hover {
+  box-shadow: 0 10px 28px rgba(30, 58, 95, 0.09);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+  h1 { overflow-wrap: anywhere; }
+  table { min-width: 720px; }
+  nav .max-w-6xl,
+  nav .max-w-5xl,
+  main.max-w-6xl,
+  main.max-w-5xl,
+  section.max-w-6xl,
+  footer .max-w-6xl { padding-left: 1rem; padding-right: 1rem; }
+  .overflow-x-auto { overflow-x: auto; }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .max-w-6xl { max-width: 94vw; }
+}
+

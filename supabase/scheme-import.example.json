@@ -1,0 +1,21 @@
+[
+  {
+    "id": "example-scheme-2026",
+    "name": "Example Government Scheme",
+    "department": "Ministry or Department Name",
+    "category": "funding",
+    "targetAudience": ["MSMEs", "Entrepreneurs"],
+    "description": "A concise, verified description.",
+    "benefits": "Describe the verified benefit.",
+    "eligibilityText": "Describe the verified eligibility rules.",
+    "rules": {
+      "minAge": 18,
+      "requiresUdyam": false
+    },
+    "documents": [],
+    "applicationProcess": ["Step one", "Step two"],
+    "officialUrl": "https://official-government-domain.example",
+    "lastVerified": "2026-01-01",
+    "tags": ["funding"]
+  }
+]

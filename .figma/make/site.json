@@ -1,0 +1,11 @@
+{
+  "title": "SchemeX - Government Scheme Finder",
+  "description": "Discover government schemes matched to your profile, understand eligibility, and estimate potential benefits.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
