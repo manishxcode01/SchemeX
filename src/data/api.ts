@@ -46,6 +46,25 @@ async function fetchLocalBootstrap(): Promise<BootstrapData> {
 }
 
 export async function fetchPlatformStats(): Promise<PlatformStats> {
+  if (supabase) {
+    try {
+      const [{ count: schemeCount, error: schemeError }, { count: userCount, error: userError }] = await Promise.all([
+        supabase.from('schemes').select('*', { count: 'exact', head: true }).eq('published', true),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      ])
+      if (!schemeError && !userError) {
+        const totalSchemes = schemeCount ?? 15
+        return {
+          users: userCount ?? 0,
+          schemes: totalSchemes,
+          eligibleMatches: 0,
+          nearMissMatches: totalSchemes,
+        }
+      }
+    } catch {
+      // Fallback to local
+    }
+  }
   const response = await fetch('/api/stats')
   if (!response.ok) throw new Error(`Stats request failed: ${response.status}`)
   return response.json() as Promise<PlatformStats>

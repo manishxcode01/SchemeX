@@ -46,14 +46,24 @@ function persistDatabase() {
   fs.writeFileSync(databasePath, Buffer.from(database.export()))
 }
 
-const schemeCount = Number(database.exec('SELECT COUNT(*) FROM schemes')[0]?.values[0]?.[0] ?? 0)
-if (schemeCount === 0) {
-  const statement = database.prepare('INSERT INTO schemes (id, payload, published, updated_at) VALUES ($id, $payload, 1, $updatedAt)')
-  for (const scheme of DEFAULT_SCHEMES) {
-    statement.run({ '$id': scheme.id, '$payload': JSON.stringify(scheme), '$updatedAt': new Date().toISOString() })
+const activeIds = new Set(DEFAULT_SCHEMES.map(s => s.id))
+const existingSchemes = database.exec('SELECT id FROM schemes')
+if (existingSchemes[0]?.values) {
+  for (const [id] of existingSchemes[0].values) {
+    if (typeof id === 'string' && !activeIds.has(id)) {
+      database.run('DELETE FROM schemes WHERE id = ?', [id])
+    }
   }
-  statement.free()
 }
+
+const upsertDefaultStatement = database.prepare(
+  `INSERT INTO schemes (id, payload, published, updated_at) VALUES ($id, $payload, 1, $updatedAt)
+   ON CONFLICT(id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at`
+)
+for (const scheme of DEFAULT_SCHEMES) {
+  upsertDefaultStatement.run({ '$id': scheme.id, '$payload': JSON.stringify(scheme), '$updatedAt': new Date().toISOString() })
+}
+upsertDefaultStatement.free()
 persistDatabase()
 
 const app = express()

@@ -72,7 +72,7 @@ function AppContent() {
   if (page === 'dashboard' || page === 'matches') content = <Dashboard onNavigate={navigate} />;
   if (page === 'profile') content = <Profile onNavigate={navigate} />;
   if (page === 'schemes') content = <Schemes onNavigate={navigate} />;
-  if (page === 'scheme-detail') content = <SchemeDetail schemeId={schemeId} onNavigate={navigate} />;
+  if (page === 'scheme-detail') content = <SchemeDetail key={schemeId} schemeId={schemeId} onNavigate={navigate} />;
   if (page === 'onboarding') content = <Onboarding onNavigate={navigate} />;
   if (page === 'assistant') content = <Assistant onNavigate={navigate} />;
   if (page === 'admin') content = <Admin onNavigate={navigate} />;

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SCHEMES, USER_PROFILE, checkEligibility, formatINR } from '../data/schemes';
+import { SCHEMES, USER_PROFILE, checkEligibility, calculateBenefit, formatINR, Scheme, UserProfile } from '../data/schemes';
 
 interface Props {
   onNavigate: (page: string, id?: string) => void;
@@ -13,6 +13,40 @@ const NAV_ITEMS = [
   { id: 'admin', label: 'Admin' },
 ];
 
+function getSchemeEstimatedBenefit(scheme: Scheme, profile: UserProfile): number {
+  if (!scheme.calculator?.enabled) return 0;
+  const calc = scheme.calculator;
+  const activeVariant = (calc.variants && calc.variants[0]) ? { ...calc, ...calc.variants[0] } : calc;
+  const inputs: Record<string, number> = {
+    variantIndex: 0,
+    isRural: profile.locationType === 'Urban' ? 0 : 1,
+    isSpecial: (profile.gender === 'Female' || ['SC', 'ST', 'OBC', 'Women', 'Differently Abled', 'Ex-Serviceman'].includes(profile.entrepreneurCategory)) ? 1 : 0,
+    tenureMonths: activeVariant.maxTenureMonths || 60,
+  };
+  const preferred = profile.businessInvestment > 0 ? profile.businessInvestment : (activeVariant.minProjectCost || 100000);
+  inputs['projectCost'] = Math.max(activeVariant.minProjectCost || 10000, Math.min(activeVariant.maxProjectCost || 10000000, preferred));
+
+  calc.inputs.forEach((inp) => {
+    if (inp.key === 'isRural') {
+      inputs[inp.key] = profile.locationType === 'Urban' ? 0 : 1;
+    } else if (inp.key === 'monthlyRevenue') {
+      inputs[inp.key] = profile.annualTurnover ? Math.round(profile.annualTurnover / 12) : 25000;
+    } else if (inp.key === 'businessAge') {
+      inputs[inp.key] = (profile.yearsInOperation || 1) * 12;
+    } else if (inp.key === 'loanPeriod') {
+      inputs[inp.key] = 3;
+    } else if (inp.key === 'projectCost' || inp.key === 'loanAmount') {
+      inputs[inp.key] = Math.max(activeVariant.minProjectCost || inp.min || 10000, Math.min(activeVariant.maxProjectCost || inp.max || 10000000, preferred));
+    } else if (inp.profileKey && (profile as any)[inp.profileKey]) {
+      const val = Number((profile as any)[inp.profileKey]);
+      inputs[inp.key] = val > 0 ? val : (inp.min || 0);
+    } else if (inputs[inp.key] === undefined) {
+      inputs[inp.key] = inp.min || 0;
+    }
+  });
+  return calculateBenefit(scheme, inputs, profile).result;
+}
+
 export default function Dashboard({ onNavigate }: Props) {
   const [activeNav, setActiveNav] = useState('dashboard');
 
@@ -20,26 +54,15 @@ export default function Dashboard({ onNavigate }: Props) {
   const eligible = results.filter(r => r.eligibility.status === 'ELIGIBLE');
   const nearMiss = results.filter(r => r.eligibility.status === 'NEAR_MISS');
 
-  const totalBenefit = eligible.reduce((sum, r) => {
-    if (r.scheme.calculator?.enabled) {
-      const firstInput = r.scheme.calculator.inputs[0];
-      const val = firstInput?.profileKey ? (USER_PROFILE as any)[firstInput.profileKey] || 500000 : 500000;
-      const pct = r.scheme.calculator.percentage || 25;
-      const calc = val * (pct / 100);
-      const benefit = r.scheme.calculator.maxBenefit ? Math.min(calc, r.scheme.calculator.maxBenefit) : calc;
-      return sum + benefit;
-    }
-    return sum;
-  }, 0);
+  const totalBenefit = eligible.length > 0
+    ? eligible.reduce((sum, r) => sum + getSchemeEstimatedBenefit(r.scheme, USER_PROFILE), 0)
+    : nearMiss.slice(0, 3).reduce((sum, r) => sum + getSchemeEstimatedBenefit(r.scheme, USER_PROFILE), 0);
 
   const topOpportunities = [...eligible.slice(0, 3), ...nearMiss.slice(0, 2)];
   const investmentNeed = USER_PROFILE.businessInvestment || 0;
-  const estimatedSupport = eligible.reduce((total, result) => {
-    const calculator = result.scheme.calculator;
-    if (!calculator?.enabled || !investmentNeed) return total;
-    const rate = calculator.percentage ? calculator.percentage / 100 : 0;
-    return total + Math.min(investmentNeed * rate, calculator.maxBenefit || Number.POSITIVE_INFINITY);
-  }, 0);
+  const estimatedSupport = totalBenefit > 0
+    ? totalBenefit
+    : eligible.reduce((total, result) => total + getSchemeEstimatedBenefit(result.scheme, USER_PROFILE), 0);
   const documentChecklist = [...new Set(results.flatMap(result => result.scheme.documents.map(document => document.name)))];
   const nextGap = nearMiss.flatMap(result => result.eligibility.missing)[0];
 
@@ -167,14 +190,7 @@ export default function Dashboard({ onNavigate }: Props) {
           <div className="space-y-4">
             {eligible.slice(0, 5).map(({ scheme, eligibility }) => {
               const isEligible = eligibility.status === 'ELIGIBLE';
-              let estimatedBenefit = 0;
-              if (scheme.calculator?.enabled) {
-                const firstInput = scheme.calculator.inputs[0];
-                const val = firstInput?.profileKey ? (USER_PROFILE as any)[firstInput.profileKey] || 500000 : 500000;
-                const pct = scheme.calculator.percentage || 25;
-                const calc = val * (pct / 100);
-                estimatedBenefit = scheme.calculator.maxBenefit ? Math.min(calc, scheme.calculator.maxBenefit) : calc;
-              }
+              const estimatedBenefit = getSchemeEstimatedBenefit(scheme, USER_PROFILE);
 
               return (
                 <div key={scheme.id}
