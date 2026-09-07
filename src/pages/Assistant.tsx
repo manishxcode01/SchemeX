@@ -27,6 +27,14 @@ function generateResponse(question: string): string {
   const nearMiss = results.filter(r => r.eligibility.status === 'NEAR_MISS');
   const missingDocuments = [...new Set(nearMiss.flatMap(result => result.scheme.documents.filter(document => document.required && !(USER_PROFILE.documents || []).includes(document.name)).map(document => document.name)))];
 
+  if (q.includes('what is my name') || q === 'name' || q.includes('who am i')) {
+    return USER_PROFILE.name ? `Your saved name is **${USER_PROFILE.name}**.` : 'Your name is not saved yet. Complete your profile or update it from the Profile page.';
+  }
+
+  if (q === 'schemex' || q.includes('what is schemex') || q.includes('about schemex')) {
+    return 'SchemeX is a government-scheme finder for Indian entrepreneurs. It compares your profile with verified scheme rules, explains eligibility, identifies missing documents, estimates benefits, and shows practical application steps.';
+  }
+
   if (q.includes('best') || q.includes('top') || q.includes('which scheme')) {
     const top = eligible[0];
     if (top) return `Based on your saved profile as a ${USER_PROFILE.gender || 'entrepreneur'} in ${USER_PROFILE.state || 'your state'} with a ${USER_PROFILE.businessType || 'business'} business, your best current match is:\n\n**${top.scheme.name}**\n\n${top.scheme.benefits}\n\nYour match score is ${top.eligibility.matchScore}%.`;

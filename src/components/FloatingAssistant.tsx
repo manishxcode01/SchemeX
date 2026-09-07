@@ -1,13 +1,26 @@
 import { useState } from 'react'
+import { USER_PROFILE } from '../data/schemes'
 
 interface Props { open: boolean; onOpen: () => void; onClose: () => void }
+
+function answerBasicQuestion(question: string) {
+  const normalized = question.toLowerCase().trim()
+  if (normalized.includes('what is my name') || normalized === 'name' || normalized.includes('who am i')) {
+    return USER_PROFILE.name ? `Your saved name is ${USER_PROFILE.name}.` : 'Your name is not saved yet. Complete your profile or update it from the Profile page.'
+  }
+  if (normalized === 'schemex' || normalized.includes('what is schemex') || normalized.includes('about schemex')) {
+    return 'SchemeX is a government-scheme finder for Indian entrepreneurs. It compares your profile with verified scheme rules, explains eligibility, identifies missing documents, estimates benefits, and shows practical application steps.'
+  }
+  return 'I am checking your saved profile and published scheme data. Open your dashboard for the detailed eligibility and calculator result.'
+}
 
 export default function FloatingAssistant({ open, onOpen, onClose }: Props) {
   const [input, setInput] = useState('')
   const [messages, setMessages] = useState([{ role: 'assistant', text: 'Hi. Ask me about your eligible schemes, missing documents, or finance estimates.' }])
   const sendMessage = () => {
     if (!input.trim()) return
-    setMessages(current => [...current, { role: 'user', text: input.trim() }, { role: 'assistant', text: 'I am checking your saved profile and published scheme data. Open your dashboard for the detailed eligibility and calculator result.' }])
+    const question = input.trim()
+    setMessages(current => [...current, { role: 'user', text: question }, { role: 'assistant', text: answerBasicQuestion(question) }])
     setInput('')
   }
 
